@@ -37,6 +37,7 @@ agent-skills/
 | Skill | 适用场景 | 外部依赖 |
 |---|---|---|
 | `manual-generate-fudan` | 复旦大学业务系统用户手册生成（ehall、教务、研究生等） | Browserless（远程浏览器服务） |
+| `container-pip-bootstrap` | 容器内引导安装 pip 和 Python 库（非 root、无 sudo 环境） | 无（仅需 curl/wget + python3） |
 
 ### manual-generate-fudan
 
@@ -52,6 +53,21 @@ export BROWSERLESS_TOKEN=your-token             # 可选，如果服务需要认
 ```
 
 详细配置参考：[docs/manual-generate-fudan/browserless-setup.md](docs/manual-generate-fudan/browserless-setup.md)
+
+### container-pip-bootstrap
+
+在权限受限的容器中引导安装 pip 和 Python 库：
+- 使用 `get-pip.py` 引导安装 pip（无需 root/sudo）
+- 使用 `--break-system-packages` 绕过 PEP 668 限制
+- 使用 `--user` 安装到用户目录
+- 包含常用库安装指南（python-docx、openpyxl、pdfplumber 等）
+
+**适用环境：**
+- 非 root 用户运行的容器（如 OpenClaw 的 `node` 用户）
+- 无 sudo / apt-get 权限
+- Python 存在但 pip 缺失，或 pip 安装报 `externally-managed-environment`
+
+**无需外部依赖**，仅需容器内有 `curl` 或 `wget` + `python3`。
 
 ## 如何使用
 
