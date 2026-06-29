@@ -1,6 +1,6 @@
 ---
 name: manual-generate-fudan-v1
-description: 探索业务系统并生成功能覆盖清单和用户手册。专为复旦网上办事大厅（ehall.fudan.edu.cn）及类似 SSO 登录系统优化。使用 browserless 进行浏览器探索，包含 API 路径扫描。先盘点功能再输出手册，严格观察不编造。最终生成带截图的 Word 文档 (.docx) 和 .zip 压缩包。
+description: 探索业务系统并生成功能覆盖清单和用户手册。适用于复旦大学各业务系统（网上办事大厅、教务系统、研究生系统等），通过复旦统一身份认证（UIS）SSO 登录。使用 browserless 进行浏览器探索，包含 API 路径扫描。先盘点功能再输出手册，严格观察不编造。最终生成带截图的 Word 文档 (.docx) 和 .zip 压缩包。
 metadata:
   openclaw:
     requires:
@@ -20,9 +20,9 @@ metadata:
     emoji: "📋"
 ---
 
-# 复旦网上业务系统用户手册生成助手 (v1)
+# 复旦大学业务系统用户手册生成助手 (v1)
 
-你是一个业务系统用户手册生成助手。你的任务是在获得用户授权的前提下，通过 browserless 浏览器访问业务系统，观察系统界面、菜单、页面、按钮、表单、列表、提示信息和业务流程，先扫描 API 路径，再生成"功能覆盖清单"，最后基于用户确认后的清单生成用户手册。
+你是一个业务系统用户手册生成助手，专为复旦大学各业务系统优化。适用于网上办事大厅（ehall）、教务系统、研究生系统、财务系统等所有通过复旦统一身份认证（UIS）登录的系统。你的任务是在获得用户授权的前提下，通过 browserless 浏览器访问业务系统，观察系统界面、菜单、页面、按钮、表单、列表、提示信息和业务流程，先扫描 API 路径，再生成"功能覆盖清单"，最后基于用户确认后的清单生成用户手册。
 
 最终产出物包括：
 1. Markdown 格式的用户手册和相关文档
@@ -62,11 +62,11 @@ metadata:
 
 ## 复旦统一身份认证（UIS）登录流程
 
-复旦大学网上办事大厅（ehall.fudan.edu.cn）通过统一身份认证平台（UIS）进行 SSO 认证。登录流程如下：
+复旦大学各业务系统均通过统一身份认证平台（UIS）进行 SSO 认证。无论目标系统是网上办事大厅（ehall.fudan.edu.cn）、教务系统（jwglxt.fudan.edu.cn）还是其他复旦业务系统，登录流程基本一致。登录流程如下：
 
 ### 登录步骤
 
-1. 访问目标系统（如 `https://ehall.fudan.edu.cn`）
+1. 访问目标系统（用户会提供具体地址，如 `https://ehall.fudan.edu.cn`、`https://aiagent.fudan.edu.cn` 等）
 2. 在目标系统页面点击 **Login** 按钮（通常位于右上角）
 3. 页面自动跳转至统一身份认证登录页（`https://id.fudan.edu.cn/ac/#/index...`）
 4. 在登录页完成以下操作：
@@ -110,9 +110,10 @@ if (BROWSERLESS_TOKEN) {
 const browser = await chromium.connectOverCDP(connectUrl);
 const context = browser.contexts()[0];
 
-// 2. 打开目标系统首页
+// 2. 打开目标系统首页（URL 由用户提供）
+const TARGET_URL = '用户提供的系统地址';  // 例如 https://ehall.fudan.edu.cn
 const page = await context.newPage();
-await page.goto('https://ehall.fudan.edu.cn', { waitUntil: 'networkidle', timeout: 30000 });
+await page.goto(TARGET_URL, { waitUntil: 'networkidle', timeout: 30000 });
 
 // 3. 点击 Login 按钮
 await page.getByText('Login').first().click();
@@ -132,7 +133,7 @@ await uisPage.click('button:has-text("Sign in"), button:has-text("登录")');
 await new Promise(r => setTimeout(r, 15000));
 
 // 8. 找到登录后的目标系统页面
-let targetPage = context.pages().find(p => p.url().includes('ehall.fudan'));
+let targetPage = context.pages().find(p => p.url().includes(new URL(TARGET_URL).hostname));
 if (!targetPage) {
   // 如果没找到，可能是页面关闭了，需要用最后一个页面
   targetPage = context.pages()[context.pages().length - 1];
@@ -224,7 +225,8 @@ workspaces/<系统简称或域名>_manual_v<N>/
 
 示例：
 - `workspaces/ehall_fudan_manual_v1/`
-- `workspaces/jwglxt_manual_v2/`
+- `workspaces/jwglxt_fudan_manual_v1/`
+- `workspaces/yjs_fudan_manual_v1/`
 
 当同一系统需要重新探索或生成新版本时，递增版本号。
 
@@ -645,7 +647,7 @@ import zipfile
 import os
 
 WORKSPACE = '工作目录路径'
-ZIP_PATH = '/home/node/.openclaw/workspace/ehall_fudan_manual_v1.zip'
+ZIP_PATH = '/home/node/.openclaw/workspace/<系统简称>_manual_v1.zip'
 
 with zipfile.ZipFile(ZIP_PATH, 'w', zipfile.ZIP_DEFLATED) as zf:
     for root, dirs, files in os.walk(WORKSPACE):
@@ -667,7 +669,7 @@ print(f'[*] 文件大小: {os.path.getsize(ZIP_PATH) / 1024 / 1024:.1f} MB')
 ```
 ✅ 所有文件已打包完成！
 
-📁 压缩包位置: /home/node/.openclaw/workspace/ehall_fudan_manual_v1.zip
+📁 压缩包位置: /home/node/.openclaw/workspace/<系统简称>_manual_v1.zip
 📄 Word 手册: final_manual.docx
 📋 Markdown 手册: final_manual.md
 📸 截图: screenshots/ 目录（X 张）
