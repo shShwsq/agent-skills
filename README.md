@@ -10,21 +10,30 @@
 - **无系统级权限** — 不能安装软件包、修改系统配置
 - **网络受限** — 只能访问白名单域名或特定 API
 - **文件系统隔离** — 工作目录受限，无法访问宿主机
+- **环境支持不确定** — 不同平台对 SKILL 规范的支持程度参差不齐
 
-这类 Agent 需要依赖**远程服务**（如 Browserless）来执行浏览器操作，而非本地安装。
+这类 Agent 需要依赖**远程服务**（如 Browserless）来执行浏览器操作，而非本地安装。同时，在部署新环境时，需要先**探测环境能力**，确认智能体能否正确加载和执行 SKILL，再运行复杂任务。
 
-本仓库的 Skills 专为这种场景设计，所有依赖的外部服务均通过**环境变量配置**，不依赖本地安装或硬编码地址。
+本仓库的 Skills 专为这种场景设计：
+- 所有依赖的外部服务均通过**环境变量配置**，不依赖本地安装或硬编码地址
+- 提供**环境自检工具**，在部署后快速验证智能体对 SKILL 规范的支持程度
 
 ## 目录结构
 
 ```
 agent-skills/
-├── skills/                     # Skills 目录（智能体指令）
-│   └── manual-generate-fudan/  # 复旦大学业务系统用户手册生成
+├── skills/                         # Skills 目录（智能体指令）
+│   ├── manual-generate-fudan/      # 复旦大学业务系统用户手册生成
+│   │   └── SKILL.md
+│   ├── container-pip-bootstrap/    # 容器内引导安装 pip 和 Python 库
+│   │   └── SKILL.md
+│   └── skill-capability-probe/     # 环境能力自检（8 项测试）
 │       └── SKILL.md
-├── docs/                       # 用户文档（部署/配置指南）
-│   └── manual-generate-fudan/
-│       └── browserless-setup.md
+├── docs/                           # 用户文档（部署/配置指南）
+│   ├── manual-generate-fudan/
+│   │   └── browserless-setup.md
+│   └── skill-capability-probe/
+│       └── usage.md
 └── README.md
 ```
 
@@ -38,6 +47,7 @@ agent-skills/
 |---|---|---|
 | `manual-generate-fudan` | 复旦大学业务系统用户手册生成（ehall、教务、研究生等） | Browserless（远程浏览器服务） |
 | `container-pip-bootstrap` | 容器内引导安装 pip 和 Python 库（非 root、无 sudo 环境） | 无（仅需 curl/wget + python3） |
+| `skill-capability-probe` | 探测智能体环境对 SKILL 规范的支持程度（8 项能力自检） | 无 |
 
 ### manual-generate-fudan
 
@@ -68,6 +78,23 @@ export BROWSERLESS_TOKEN=your-token             # 可选，如果服务需要认
 - Python 存在但 pip 缺失，或 pip 安装报 `externally-managed-environment`
 
 **无需外部依赖**，仅需容器内有 `curl` 或 `wget` + `python3`。
+
+### skill-capability-probe
+
+探测智能体环境对 SKILL 规范的支持程度，8 项核心能力自检：
+- SKILL.md 加载与 frontmatter 解析
+- 环境变量读取
+- 文件读写
+- 命令执行
+- 多步骤指令遵循
+- 输出规范化
+
+**适用场景：**
+- 部署新环境后的自检
+- 验证智能体是否能正确使用 Skills
+- 排查环境配置问题
+
+**无需外部依赖**，零安装，10 秒内完成。建议作为新环境部署后的第一个测试 Skill。
 
 ## 如何使用
 
